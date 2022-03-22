@@ -65,7 +65,6 @@ func callback(event zk.Event) {
 }
 
 func (p *peer) Propose(m *Modify) error {
-	//key, value := m.Key, m.Value
 	switch m.CmdType {
 	case PutCommand:
 		return p.putToZk(m.Key, m.Value)
