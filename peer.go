@@ -4,6 +4,10 @@ import (
 	"errors"
 )
 
+var (
+	ErrCommandType = errors.New("commandTypeError: we support only Put command and Delete command")
+)
+
 type Peer interface {
 	Propose(m *Modify) error
 	Apply() (<-chan Modify, error)
@@ -29,25 +33,32 @@ type peer struct {
 	coor Coordinator
 }
 
-func StartPeer(c *Config) *peer {
+func StartPeer(c *Config) (*peer, error) {
 	p := &peer{}
 	p.coor = newCoor(c)
-	// TODO: create a zk client and run
-	return p
+	// create a zk client and run
+	err := p.coor.connect()
+	return p, err
 }
 
 func (p *peer) Propose(m *Modify) error {
-	//key, value := m.Key, m.Value
-	// TODO: get version in zk to judge if our proposal is stale
 	switch m.CmdType {
 	case PutCommand:
-		// TODO: Send data to zk
+		return p.putToZk(m.Key, m.Value)
 	case DelCommand:
-		// TODO: Send data to zk
+		return p.delToZk(m.Key)
 	default:
-		return errors.New("CommandTypeError: We support only Put command and Delete command")
+		return ErrCommandType
 	}
 	return nil
+}
+
+func (p *peer) putToZk(key []byte, val []byte) error {
+	return p.coor.putToZk(key, val)
+}
+
+func (p *peer) delToZk(key []byte) error {
+	return p.coor.delToZk(key)
 }
 
 func (p *peer) Apply() (<-chan Modify, error) {
